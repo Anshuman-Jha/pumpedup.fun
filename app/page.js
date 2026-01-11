@@ -96,6 +96,12 @@ export default function Home() {
 
     if (!config[chainId]) {
       await switchNetwork()
+      // Re-fetch network after switch attempt (optional but good to ensure state is consistent, though usually page reloads or valid provider updates handle it.
+      // Ethers provider might need refresh if network changed?
+      // window.ethereum.on('chainChanged') usually handles reload. 
+      // For now, just return, simplistic approach as the user will likely switch and page might reload or they click connect again.
+      // Actually, standard behavior is window.location.reload() on chain changed.
+      // But let's just leave the simple switch request.
       return
     }
 
