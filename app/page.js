@@ -1,0 +1,194 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { ethers } from 'ethers'
+
+// Components
+import Header from "./components/Header"
+import List from "./components/List"
+import Token from "./components/Token"
+import Trade from "./components/Trade"
+
+// ABIs & Config
+import Factory from "./abis/Factory.json"
+import config from "./config.json"
+import images from "./images.json"
+
+export default function Home() {
+  const [provider, setProvider] = useState(null)
+  const [account, setAccount] = useState(null)
+  const [factory, setFactory] = useState(null)
+  const [fee, setFee] = useState(0)
+  const [tokens, setTokens] = useState([])
+  const [token, setToken] = useState(null)
+  const [showCreate, setShowCreate] = useState(false)
+  const [showTrade, setShowTrade] = useState(false)
+
+  function toggleCreate() {
+    showCreate ? setShowCreate(false) : setShowCreate(true)
+  }
+
+  function toggleTrade(token) {
+    setToken(token)
+    showTrade ? setShowTrade(false) : setShowTrade(true)
+  }
+
+  async function switchNetwork() {
+    try {
+      // Request account access if needed (prevents 4100 error)
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: '0xaa36a7' }], // Sepolia chainId
+      });
+    } catch (switchError) {
+      // This error code indicates that the chain has not been added to MetaMask.
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: '0xaa36a7',
+                chainName: 'Sepolia',
+                rpcUrls: ['https://eth-sepolia.g.alchemy.com/v2/demo'],
+                nativeCurrency: {
+                  name: 'Sepolia Ether',
+                  symbol: 'SEP',
+                  decimals: 18,
+                },
+                blockExplorerUrls: ['https://sepolia.etherscan.io'],
+              },
+            ],
+          });
+        } catch (addError) {
+          console.error("Failed to add Sepolia network:", addError);
+        }
+      } else if (switchError.code === 4001) {
+        // User rejected the request
+        console.log("User rejected the network switch request.");
+      } else {
+        console.error("Failed to switch to Sepolia. Code:", switchError.code);
+        console.error("Error Message:", switchError.message);
+        console.error("Full Error:", switchError);
+      }
+    }
+  }
+
+  async function loadBlockchainData() {
+    // Use MetaMask for our connection
+    if (!window.ethereum) {
+      console.log("No wallet found")
+      return
+    }
+
+    const provider = new ethers.BrowserProvider(window.ethereum)
+    setProvider(provider)
+
+    // Get the current network
+    const network = await provider.getNetwork()
+
+    // Create reference to Factory contract
+    if (!config[network.chainId]) {
+      await switchNetwork()
+      // Re-fetch network after switch attempt (optional but good to ensure state is consistent, though usually page reloads or valid provider updates handle it.
+      // Ethers provider might need refresh if network changed?
+      // window.ethereum.on('chainChanged') usually handles reload. 
+      // For now, just return, simplistic approach as the user will likely switch and page might reload or they click connect again.
+      // Actually, standard behavior is window.location.reload() on chain changed.
+      // But let's just leave the simple switch request.
+      return
+    }
+
+    const factory = new ethers.Contract(config[network.chainId].factory.address, Factory, provider)
+    setFactory(factory)
+
+    // Fetch the fee
+    const fee = await factory.fee()
+    setFee(fee)
+
+    // Prepare to fetch token details
+    const totalTokens = await factory.totalTokens()
+    const tokens = []
+
+    // We'll get the first 6 tokens listed
+    for (let i = 0; i < totalTokens; i++) {
+      if (i == 6) {
+        break
+      }
+
+      const tokenSale = await factory.getTokenSale(i)
+
+      // We create our own object to store extra fields
+      // like images
+      const token = {
+        token: tokenSale.token,
+        name: tokenSale.name,
+        creator: tokenSale.creator,
+        sold: tokenSale.sold,
+        raised: tokenSale.raised,
+        isOpen: tokenSale.isOpen,
+        image: images[i]
+      }
+
+      tokens.push(token)
+    }
+
+    // We reverse the array so we can get the most
+    // recent token listed to display first
+    setTokens(tokens.reverse())
+  }
+
+  useEffect(() => {
+    loadBlockchainData()
+  }, [showCreate, showTrade])
+
+  return (
+    <div className="page">
+      <Header account={account} setAccount={setAccount} />
+
+      <main>
+        <div className="create">
+          <button onClick={factory && account && toggleCreate} className="btn--fancy">
+            {!factory ? (
+              "[ contract not deployed ]"
+            ) : !account ? (
+              "[ please connect ]"
+            ) : (
+              "[ start a new token ]"
+            )}
+          </button>
+        </div>
+
+        <div className="listings">
+          <h1>new listings</h1>
+
+          <div className="tokens">
+            {!account ? (
+              <p>please connect wallet</p>
+            ) : tokens.length === 0 ? (
+              <p>No tokens listed</p>
+            ) : (
+              tokens.map((token, index) => (
+                <Token
+                  toggleTrade={toggleTrade}
+                  token={token}
+                  key={index}
+                />
+              ))
+            )}
+          </div>
+        </div>
+
+        {showCreate && (
+          <List toggleCreate={toggleCreate} fee={fee} provider={provider} factory={factory} />
+        )}
+
+        {showTrade && (
+          <Trade toggleTrade={toggleTrade} token={token} provider={provider} factory={factory} />
+        )}
+      </main>
+    </div>
+  );
+}
