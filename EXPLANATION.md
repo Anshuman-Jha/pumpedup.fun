@@ -31,20 +31,42 @@ function getCost(uint256 _sold) public pure returns (uint256) {
 }
 ```
 
-### Breakdown by Stages
-1.  **Tokens 0 - 10,000**:
-    - `_sold / increment` = `0`
-    - **Price:** `0.0001 ETH` (The Floor)
+### 🔢 Math Deep Dive: How the Price is Calculated
 
-2.  **Tokens 10,001 - 20,000**:
-    - `_sold / increment` = `1`
-    - **Price:** `0.0002 ETH` (Floor + 1 Step)
+The magic lies in **Integer Division** in Solidity.
+The formula is: `Cost = (Step * (Sold / Increment)) + Floor`
 
-3.  **Tokens 20,001 - 30,000**:
-    - `_sold / increment` = `2`
-    - **Price:** `0.0003 ETH`
+- **Floor**: 0.0001 ETH (The minimum price)
+- **Step**: 0.0001 ETH (How much price increases)
+- **Increment**: 10,000 (Every 10k tokens, price goes up)
 
-This creates a "staircase" effect. The price stays flat for a batch of 10,000 tokens, then jumps up.
+#### Example 1: You are an Early Buyer
+Imagine **5,000** tokens have been sold so far.
+1.  `_sold / increment` = `5,000 / 10,000` = **0**
+    *(In integer math, 0.5 becomes 0)*.
+2.  `Cost` = `(0.0001 * 0) + 0.0001`
+3.  **Final Price:** `0.0001 ETH` per token.
+
+#### Example 2: The Curve Moves Up
+Now, imagine **15,000** tokens have been sold.
+1.  `_sold / increment` = `15,000 / 10,000` = **1**
+    *(1.5 becomes 1)*.
+2.  `Cost` = `(0.0001 * 1) + 0.0001`
+3.  **Final Price:** `0.0002 ETH` per token.
+
+#### Example 3: Late Stage FOMO
+Finally, imagine **25,000** tokens have been sold.
+1.  `_sold / increment` = `25,000 / 10,000` = **2**.
+2.  `Cost` = `(0.0001 * 2) + 0.0001`
+3.  **Final Price:** `0.0003 ETH` per token.
+
+### Visual Summary
+This creates a **Step Function** (like stairs), not a smooth lines.
+- **Level 1 (0 - 9,999 Sold):** Price is 0.0001 ETH
+- **Level 2 (10,000 - 19,999 Sold):** Price is 0.0002 ETH
+- **Level 3 (20,000 - 29,999 Sold):** Price is 0.0003 ETH
+
+This structure guarantees that early supporters **always** get a cheaper price than latecomers.
 
 ---
 

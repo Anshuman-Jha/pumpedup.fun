@@ -90,18 +90,16 @@ export default function Home() {
     const network = await provider.getNetwork()
 
     // Create reference to Factory contract
-    if (!config[network.chainId]) {
+    const chainId = network.chainId.toString();
+    console.log("Detected Chain ID:", chainId);
+    console.log("Available Config Chains:", Object.keys(config));
+
+    if (!config[chainId]) {
       await switchNetwork()
-      // Re-fetch network after switch attempt (optional but good to ensure state is consistent, though usually page reloads or valid provider updates handle it.
-      // Ethers provider might need refresh if network changed?
-      // window.ethereum.on('chainChanged') usually handles reload. 
-      // For now, just return, simplistic approach as the user will likely switch and page might reload or they click connect again.
-      // Actually, standard behavior is window.location.reload() on chain changed.
-      // But let's just leave the simple switch request.
       return
     }
 
-    const factory = new ethers.Contract(config[network.chainId].factory.address, Factory, provider)
+    const factory = new ethers.Contract(config[chainId].factory.address, Factory, provider)
     setFactory(factory)
 
     // Fetch the fee
