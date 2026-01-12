@@ -139,6 +139,52 @@ export default function Home() {
       tokens.push(token)
     }
 
+    // Add Mock Token for Demo
+    const mockTokens = [
+      {
+        token: "0x0000000000000000000000000000000000000000",
+        name: "Assassin Doge",
+        creator: account || "0x1234567890123456789012345678901234567890",
+        sold: 50n,
+        raised: ethers.parseUnits("5", 18),
+        isOpen: true,
+        image: "https://pump.mypinata.cloud/ipfs/QmPPhPbe9t5AKkBgBP4uon7aBdwLzukdS5PJoujC4YjJBj",
+        isMock: true
+      },
+      {
+        token: "0x0000000000000000000000000000000000000001",
+        name: "Cyber Cat",
+        creator: "0xMockUser1",
+        sold: 80n,
+        raised: ethers.parseUnits("20", 18),
+        isOpen: true,
+        image: "https://pump.mypinata.cloud/ipfs/QmZ4ea3wmwzwYwyWnhzs35hyxw4YryWB82TknGY3L5Wbxn",
+        isMock: true
+      },
+      {
+        token: "0x0000000000000000000000000000000000000002",
+        name: "Moon Rocket",
+        creator: "0xMockUser2",
+        sold: 95n,
+        raised: ethers.parseUnits("90", 18),
+        isOpen: true,
+        image: "https://pump.mypinata.cloud/ipfs/QmfFEKp9zFzTmcDjHLXi5H6E5dnKn8NjeaT5ZN2yenFfUR",
+        isMock: true
+      },
+      {
+        token: "0x0000000000000000000000000000000000000003",
+        name: "Golden Pepe",
+        creator: "0xMockUser3",
+        sold: 10n,
+        raised: ethers.parseUnits("1", 18),
+        isOpen: true,
+        image: "https://pump.mypinata.cloud/ipfs/QmdwMz7LDs42JoUxz1E9fyWjRwi9dLE1R8HEGDc4EdTvty",
+        isMock: true
+      }
+    ]
+
+    tokens.push(...mockTokens)
+
     // We reverse the array so we can get the most
     // recent token listed to display first
     setTokens(tokens.reverse())

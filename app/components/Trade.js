@@ -9,6 +9,12 @@ function Trade({ toggleTrade, token, provider, factory }) {
   async function buyHandler(form) {
     const amount = form.get("amount")
 
+    if (token.isMock) {
+      alert(`Mock Purchase Successful! You bought ${amount} ${token.name}.`)
+      toggleTrade()
+      return
+    }
+
     const cost = await factory.getCost(token.sold)
     const totalCost = cost * BigInt(amount)
 
@@ -25,6 +31,13 @@ function Trade({ toggleTrade, token, provider, factory }) {
   }
 
   async function getSaleDetails() {
+    if (token.isMock) {
+      setTarget(ethers.parseUnits("100", 18))
+      setLimit(ethers.parseUnits("1000", 18))
+      setCost(ethers.parseUnits("0.001", 18))
+      return
+    }
+
     const target = await factory.TARGET()
     setTarget(target)
 
