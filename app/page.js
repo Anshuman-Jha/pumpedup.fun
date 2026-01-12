@@ -36,28 +36,20 @@ export default function Home() {
   }
 
   async function switchNetwork() {
-    alert("Step 1: Function started");
-    console.log("Switching network...");
-
     if (!window.ethereum) {
       alert("Error: No crypto wallet found!");
       return;
     }
 
-    alert("Step 2: Wallet found. Requesting access...");
-
     try {
-      // Request account access if needed (prevents 4100 error)
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      alert("Step 3: Access granted to: " + accounts[0]);
+      // Request account access if needed
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
 
-      alert("Step 4: Requesting switch to Sepolia (ID: 0xaa36a7)...");
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: '0xaa36a7' }], // Sepolia chainId
       });
 
-      alert("Step 5: Switch request sent! Check your wallet popup.");
       window.location.reload();
     } catch (switchError) {
       // 1. Log the full error for debugging

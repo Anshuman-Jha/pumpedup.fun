@@ -19,6 +19,16 @@ With our **Bonding Curve** mechanism, every token starts with a fair price that 
 - **Fair Pricing:** Algorithmic pricing ensures early buyers get the best entry.
 - **Bot Resistant:** No pre-sales, no sniper bots—just raw demand.
 
+> [!IMPORTANT]
+> **Sepolia Network Required**
+> This application is deployed and fully functional **exclusively on the Sepolia Testnet**.
+> To interact with the platform (creating tokens, buying, or viewing listings), you **must** connect your MetaMask wallet to the Sepolia network. Use the `[ switch to sepolia ]` button in the app if you are on the wrong chain!
+
+<p align="center">
+  <img src="./readme_left.png" width="48%" />
+  <img src="./cover_readme.png" width="48%" />
+</p>
+
 ---
 
 ## 🔮 System Architecture
