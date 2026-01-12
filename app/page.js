@@ -34,18 +34,46 @@ export default function Home() {
   }
 
   async function switchNetwork() {
+    alert("Step 1: Function started");
+    console.log("Switching network...");
+
+    if (!window.ethereum) {
+      alert("Error: No crypto wallet found!");
+      return;
+    }
+
+    alert("Step 2: Wallet found. Requesting access...");
+
     try {
       // Request account access if needed (prevents 4100 error)
-      await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      alert("Step 3: Access granted to: " + accounts[0]);
 
+      alert("Step 4: Requesting switch to Sepolia (ID: 0xaa36a7)...");
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: '0xaa36a7' }], // Sepolia chainId
       });
+
+      alert("Step 5: Switch request sent! Check your wallet popup.");
+      window.location.reload();
     } catch (switchError) {
-      // This error code indicates that the chain has not been added to MetaMask.
-      if (switchError.code === 4902) {
+      // 1. Log the full error for debugging
+      console.error("Switch Network Error:", switchError);
+      const errorMsg = switchError.message || JSON.stringify(switchError);
+
+      // 2. Check for "User Rejected" specifically
+      if (switchError.code === 4001) {
+        alert("You rejected the network switch.");
+        return;
+      }
+
+      // 3. Fallback: If code is 4902 (Chain not found) OR undefined/generic error
+      //    we attempt to ADD the network.
+      if (switchError.code === 4902 || !switchError.code) {
         try {
+          alert("Switch failed (Network likely missing). Attempting to add Sepolia...");
+
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [
@@ -62,19 +90,15 @@ export default function Home() {
               },
             ],
           });
+
+          alert("Network added! Reloading page...");
+          window.location.reload();
         } catch (addError) {
           console.error("Failed to add Sepolia network:", addError);
-          alert("Failed to add Sepolia network. Check console for details.");
+          alert("Failed to add network: " + (addError.message || JSON.stringify(addError)));
         }
-      } else if (switchError.code === 4001) {
-        // User rejected the request
-        console.log("User rejected the network switch request.");
-        alert("You rejected the network switch. Please approve it to continue.");
-      } else if (switchError.code === -32002) {
-        alert("A network switch request is already pending in your wallet. Please check MetaMask.");
       } else {
-        console.error("Failed to switch to Sepolia. Code:", switchError.code);
-        alert("Failed to switch network: " + switchError.message);
+        alert("Failed to switch network. details: " + errorMsg);
       }
     }
   }
@@ -149,38 +173,43 @@ export default function Home() {
       return
     }
 
-    const factory = new ethers.Contract(config[chainId].factory.address, Factory, provider)
-    setFactory(factory)
+    let tokens = []
+    try {
+      const factory = new ethers.Contract(config[chainId].factory.address, Factory.abi, provider)
+      setFactory(factory)
 
-    // Fetch the fee
-    const fee = await factory.fee()
-    setFee(fee)
+      // Fetch the fee
+      const fee = await factory.fee()
+      setFee(fee)
 
-    // Prepare to fetch token details
-    const totalTokens = await factory.totalTokens()
-    const tokens = []
+      // Prepare to fetch token details
+      const totalTokens = await factory.totalTokens()
 
-    // We'll get the first 6 tokens listed
-    for (let i = 0; i < totalTokens; i++) {
-      if (i == 6) {
-        break
+      // We'll get the first 6 tokens listed
+      for (let i = 0; i < totalTokens; i++) {
+        if (i == 6) {
+          break
+        }
+
+        const tokenSale = await factory.getTokenSale(i)
+
+        // We create our own object to store extra fields
+        // like images
+        const token = {
+          token: tokenSale.token,
+          name: tokenSale.name,
+          creator: tokenSale.creator,
+          sold: tokenSale.sold,
+          raised: tokenSale.raised,
+          isOpen: tokenSale.isOpen,
+          image: images[i]
+        }
+
+        tokens.push(token)
       }
-
-      const tokenSale = await factory.getTokenSale(i)
-
-      // We create our own object to store extra fields
-      // like images
-      const token = {
-        token: tokenSale.token,
-        name: tokenSale.name,
-        creator: tokenSale.creator,
-        sold: tokenSale.sold,
-        raised: tokenSale.raised,
-        isOpen: tokenSale.isOpen,
-        image: images[i]
-      }
-
-      tokens.push(token)
+    } catch (error) {
+      console.error("Error fetching blockchain data:", error)
+      // Even if real data fails, we can continue to show mocks
     }
 
     // Append Mock Tokens
@@ -201,7 +230,7 @@ export default function Home() {
 
       <main>
         <div className="create">
-          <button onClick={!factory ? switchNetwork : !account ? null : toggleCreate} className="btn--fancy">
+          <button onClick={!factory ? () => switchNetwork() : !account ? null : toggleCreate} className="btn--fancy">
             {!factory ? (
               "[ switch to sepolia ]"
             ) : !account ? (

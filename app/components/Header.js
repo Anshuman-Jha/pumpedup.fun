@@ -2,9 +2,19 @@ import { ethers } from "ethers"
 
 function Header({ account, setAccount }) {
   async function connectHandler() {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    const account = ethers.getAddress(accounts[0])
-    setAccount(account);
+    if (!window.ethereum) {
+      alert("Please install MetaMask to connect.");
+      return;
+    }
+
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const account = ethers.getAddress(accounts[0])
+      setAccount(account);
+    } catch (error) {
+      console.error("Connection Error:", error);
+      alert("Failed to connect: " + error.message);
+    }
   }
 
   return (
