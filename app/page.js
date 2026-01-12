@@ -64,14 +64,17 @@ export default function Home() {
           });
         } catch (addError) {
           console.error("Failed to add Sepolia network:", addError);
+          alert("Failed to add Sepolia network. Check console for details.");
         }
       } else if (switchError.code === 4001) {
         // User rejected the request
         console.log("User rejected the network switch request.");
+        alert("You rejected the network switch. Please approve it to continue.");
+      } else if (switchError.code === -32002) {
+        alert("A network switch request is already pending in your wallet. Please check MetaMask.");
       } else {
         console.error("Failed to switch to Sepolia. Code:", switchError.code);
-        console.error("Error Message:", switchError.message);
-        console.error("Full Error:", switchError);
+        alert("Failed to switch network: " + switchError.message);
       }
     }
   }
@@ -141,7 +144,8 @@ export default function Home() {
     if (!config[chainId]) {
       // Even if network is wrong, show mock tokens!
       setTokens(mockTokens)
-      await switchNetwork()
+      // Do not auto-switch, let user click the button.
+      // await switchNetwork() 
       return
     }
 
