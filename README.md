@@ -25,8 +25,8 @@ With our **Bonding Curve** mechanism, every token starts with a fair price that 
 > To interact with the platform (creating tokens, buying, or viewing listings), you **must** connect your MetaMask wallet to the Sepolia network. Use the `[ switch to sepolia ]` button in the app if you are on the wrong chain!
 
 <p align="center">
-  <img src="./readme_left.png" width="48%" />
-  <img src="./cover_readme.png" width="48%" />
+  <img src="./readme_left.png" width="48%" height="350" />
+  <img src="./cover_readme.png" width="48%" height="350" />
 </p>
 
 ---
