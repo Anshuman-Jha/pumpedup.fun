@@ -83,63 +83,7 @@ export default function Home() {
       return
     }
 
-    const provider = new ethers.BrowserProvider(window.ethereum)
-    setProvider(provider)
-
-    // Get the current network
-    const network = await provider.getNetwork()
-
-    // Create reference to Factory contract
-    const chainId = network.chainId.toString();
-    console.log("Detected Chain ID:", chainId);
-    console.log("Available Config Chains:", Object.keys(config));
-
-    if (!config[chainId]) {
-      await switchNetwork()
-      // Re-fetch network after switch attempt (optional but good to ensure state is consistent, though usually page reloads or valid provider updates handle it.
-      // Ethers provider might need refresh if network changed?
-      // window.ethereum.on('chainChanged') usually handles reload. 
-      // For now, just return, simplistic approach as the user will likely switch and page might reload or they click connect again.
-      // Actually, standard behavior is window.location.reload() on chain changed.
-      // But let's just leave the simple switch request.
-      return
-    }
-
-    const factory = new ethers.Contract(config[chainId].factory.address, Factory, provider)
-    setFactory(factory)
-
-    // Fetch the fee
-    const fee = await factory.fee()
-    setFee(fee)
-
-    // Prepare to fetch token details
-    const totalTokens = await factory.totalTokens()
-    const tokens = []
-
-    // We'll get the first 6 tokens listed
-    for (let i = 0; i < totalTokens; i++) {
-      if (i == 6) {
-        break
-      }
-
-      const tokenSale = await factory.getTokenSale(i)
-
-      // We create our own object to store extra fields
-      // like images
-      const token = {
-        token: tokenSale.token,
-        name: tokenSale.name,
-        creator: tokenSale.creator,
-        sold: tokenSale.sold,
-        raised: tokenSale.raised,
-        isOpen: tokenSale.isOpen,
-        image: images[i]
-      }
-
-      tokens.push(token)
-    }
-
-    // Add Mock Token for Demo
+    // Mock Tokens Definition
     const mockTokens = [
       {
         token: "0x0000000000000000000000000000000000000000",
@@ -183,6 +127,59 @@ export default function Home() {
       }
     ]
 
+    const provider = new ethers.BrowserProvider(window.ethereum)
+    setProvider(provider)
+
+    // Get the current network
+    const network = await provider.getNetwork()
+
+    // Create reference to Factory contract
+    const chainId = network.chainId.toString();
+    console.log("Detected Chain ID:", chainId);
+    console.log("Available Config Chains:", Object.keys(config));
+
+    if (!config[chainId]) {
+      // Even if network is wrong, show mock tokens!
+      setTokens(mockTokens)
+      await switchNetwork()
+      return
+    }
+
+    const factory = new ethers.Contract(config[chainId].factory.address, Factory, provider)
+    setFactory(factory)
+
+    // Fetch the fee
+    const fee = await factory.fee()
+    setFee(fee)
+
+    // Prepare to fetch token details
+    const totalTokens = await factory.totalTokens()
+    const tokens = []
+
+    // We'll get the first 6 tokens listed
+    for (let i = 0; i < totalTokens; i++) {
+      if (i == 6) {
+        break
+      }
+
+      const tokenSale = await factory.getTokenSale(i)
+
+      // We create our own object to store extra fields
+      // like images
+      const token = {
+        token: tokenSale.token,
+        name: tokenSale.name,
+        creator: tokenSale.creator,
+        sold: tokenSale.sold,
+        raised: tokenSale.raised,
+        isOpen: tokenSale.isOpen,
+        image: images[i]
+      }
+
+      tokens.push(token)
+    }
+
+    // Append Mock Tokens
     tokens.push(...mockTokens)
 
     // We reverse the array so we can get the most
