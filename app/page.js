@@ -197,9 +197,9 @@ export default function Home() {
 
       <main>
         <div className="create">
-          <button onClick={factory && account && toggleCreate} className="btn--fancy">
+          <button onClick={!factory ? switchNetwork : !account ? null : toggleCreate} className="btn--fancy">
             {!factory ? (
-              "[ contract not deployed ]"
+              "[ switch to sepolia ]"
             ) : !account ? (
               "[ please connect ]"
             ) : (
