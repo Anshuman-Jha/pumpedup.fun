@@ -125,16 +125,13 @@ export default function Home() {
     // Check for already connected accounts
     try {
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      console.log("DEBUG: eth_accounts result:", accounts);
       if (accounts.length > 0) {
-        const accountAddress = ethers.getAddress(accounts[0]);
-        console.log("DEBUG: Found account:", accountAddress);
-        setAccount(accountAddress);
+        setAccount(ethers.getAddress(accounts[0]));
       } else {
-        console.log("DEBUG: No accounts found via eth_accounts");
+        setAccount(null);
       }
     } catch (err) {
-      console.error("DEBUG: Error checking accounts:", err);
+      console.error("Error checking accounts:", err);
     }
 
     const provider = new ethers.BrowserProvider(window.ethereum)
@@ -142,12 +139,9 @@ export default function Home() {
 
     // Get the current network
     const network = await provider.getNetwork()
-    console.log("DEBUG: Current network:", network);
 
     // Create reference to Factory contract
     const chainId = network.chainId.toString();
-    console.log("Detected Chain ID:", chainId);
-    console.log("Available Config Chains:", Object.keys(config));
 
     if (!config[chainId]) {
       setTokens([])
@@ -210,10 +204,10 @@ export default function Home() {
         // Some wallets/extensions might not implement the standard EventEmitter interface fully
         if (typeof window.ethereum.on === 'function') {
           window.ethereum.on('chainChanged', () => {
-            window.location.reload();
+            loadBlockchainData();
           });
           window.ethereum.on('accountsChanged', () => {
-            window.location.reload();
+            loadBlockchainData();
           });
         }
       } catch (err) {
