@@ -50,7 +50,8 @@ export default function Home() {
         params: [{ chainId: '0xaa36a7' }], // Sepolia chainId
       });
 
-      window.location.reload();
+      // window.location.reload(); // Removed to prevent connection loss
+      await loadBlockchainData(); // Refresh state directly
     } catch (switchError) {
       // 1. Log the full error for debugging
       console.error("Switch Network Error:", switchError);
@@ -85,8 +86,9 @@ export default function Home() {
             ],
           });
 
-          alert("Network added! Reloading page...");
-          window.location.reload();
+          alert("Network added! Refreshing...");
+          // window.location.reload(); // Removed
+          await loadBlockchainData();
         } catch (addError) {
           console.error("Failed to add Sepolia network:", addError);
           alert("Failed to add network: " + (addError.message || JSON.stringify(addError)));
@@ -97,6 +99,22 @@ export default function Home() {
     }
   }
 
+  async function connectHandler() {
+    if (!window.ethereum) {
+      alert("Please install MetaMask to connect.");
+      return;
+    }
+
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const account = ethers.getAddress(accounts[0])
+      setAccount(account);
+    } catch (error) {
+      console.error("Connection Error:", error);
+      alert("Failed to connect: " + error.message);
+    }
+  }
+
   async function loadBlockchainData() {
     // Use MetaMask for our connection
     if (!window.ethereum) {
@@ -104,13 +122,27 @@ export default function Home() {
       return
     }
 
-
+    // Check for already connected accounts
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      console.log("DEBUG: eth_accounts result:", accounts);
+      if (accounts.length > 0) {
+        const accountAddress = ethers.getAddress(accounts[0]);
+        console.log("DEBUG: Found account:", accountAddress);
+        setAccount(accountAddress);
+      } else {
+        console.log("DEBUG: No accounts found via eth_accounts");
+      }
+    } catch (err) {
+      console.error("DEBUG: Error checking accounts:", err);
+    }
 
     const provider = new ethers.BrowserProvider(window.ethereum)
     setProvider(provider)
 
     // Get the current network
     const network = await provider.getNetwork()
+    console.log("DEBUG: Current network:", network);
 
     // Create reference to Factory contract
     const chainId = network.chainId.toString();
@@ -171,6 +203,34 @@ export default function Home() {
 
   useEffect(() => {
     loadBlockchainData()
+
+    // Setup listeners
+    if (window.ethereum) {
+      try {
+        // Some wallets/extensions might not implement the standard EventEmitter interface fully
+        if (typeof window.ethereum.on === 'function') {
+          window.ethereum.on('chainChanged', () => {
+            window.location.reload();
+          });
+          window.ethereum.on('accountsChanged', () => {
+            window.location.reload();
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to setup ethereum listeners:", err);
+      }
+    }
+
+    return () => {
+      if (window.ethereum && window.ethereum.removeListener) {
+        try {
+          window.ethereum.removeAllListeners('chainChanged');
+          window.ethereum.removeAllListeners('accountsChanged');
+        } catch (e) {
+          // ignore cleanup errors
+        }
+      }
+    }
   }, [showCreate, showTrade])
 
   return (
@@ -179,7 +239,7 @@ export default function Home() {
 
       <main>
         <div className="create">
-          <button onClick={!factory ? () => switchNetwork() : !account ? null : toggleCreate} className="btn--fancy">
+          <button onClick={!factory ? () => switchNetwork() : !account ? connectHandler : toggleCreate} className="btn--fancy">
             {!factory ? (
               "[ switch to sepolia ]"
             ) : !account ? (

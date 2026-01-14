@@ -9,8 +9,6 @@ function Trade({ toggleTrade, token, provider, factory }) {
   async function buyHandler(form) {
     const amount = form.get("amount")
 
-
-
     const cost = await factory.getCost(token.sold)
     const totalCost = cost * BigInt(amount)
 
